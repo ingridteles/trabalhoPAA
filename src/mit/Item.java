@@ -37,7 +37,7 @@ public class Item {
 		};
 	}
 	
-	public static Comparator<Item> porValorDaVariavel() {
+	public static Comparator<Item> porValorDaVariavelX() {
 		return new Comparator<Item>() {
 			public int compare(Item i1, Item i2) {
 		        if (i1.x > i2.x) return -1;
@@ -47,7 +47,6 @@ public class Item {
 		};
 	}
 	
-	// TODO ajeitar esssa ordenação
 	public static Comparator<Item> porCustoBeneficio() {
 		return new Comparator<Item>() {
 			public int compare(Item item1, Item item2) {

@@ -36,13 +36,6 @@ public class Entrada {
 						Double.parseDouble(linha[2]), Double.parseDouble(linha[3]));
 				itens.add(item);
 			}
-
-			// Ordena os itens por custo benefício decrescente
-			// TODO ajeitar esssa ordenação
-			//Collections.sort(itens, Item.porCustoBeneficio());
-			System.out.println(itens.stream().map(item -> String.valueOf(item.getValor())).collect(Collectors.joining(", ", "\nItem Por Custo Beneficio: [", "]")));
-			System.err.println("");
-
 		} catch (FileNotFoundException e) {
 			System.out.printf("\n Arquivo: \"%s\" não encontrado.", path);
 			System.exit(0);

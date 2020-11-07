@@ -55,6 +55,24 @@ public class Restricao {
 		return false;
 	}
 
+	public boolean ehMaisRestritiva(Restricao novaRestricao) {
+		// caso em que a restrição já existente tem o mesmo label, o mesmo símbolo e é e
+		// pe
+		if (this.label == novaRestricao.label && this.simboloRestricao.equals(novaRestricao.simboloRestricao)) {
+			if (this.simboloRestricao.equals("<=")) {
+				if (this.xInteiro <= novaRestricao.xInteiro) {
+					return true;
+
+				}
+			} else if (this.simboloRestricao.equals(">=")) {
+				if (this.xInteiro >= novaRestricao.xInteiro) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
 	public static Comparator<Restricao> porLabel() {
 		return new Comparator<Restricao>() {
 			public int compare(Restricao r1, Restricao r2) {

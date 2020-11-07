@@ -12,13 +12,13 @@ import ilog.cplex.IloCplex;
 import mit.Entrada;
 import mit.Item;
 
-public class MitInteiro {
+public class MitFracionado {
 
 	public static void main(String[] args) {
 		String path = "instancias_knapsack_3d/";
 		//String intancia = "teste2.3kp";
 		// String intancia = "teste-2.3kp";
-		 String intancia = "facil0";
+		String intancia = "facil0";
 		// String intancia = "facil1";
 		// String intancia = "facil2";
 		// String intancia = "facil3";
@@ -37,16 +37,17 @@ public class MitInteiro {
 	}
 
 	/*
-	 * Calcula o valor da solução da instância chamando o solver com as variáveis inteiras
-	 * para saber o valor da solução ótima e comparar com o valor encontrado pelo algoritmo branch and bond.
+	 * Calcula o valor da solução da instância chamando o solver com as variáveis
+	 * inteiras para saber o valor da solução ótima e comparar com o valor
+	 * encontrado pelo algoritmo branch and bond.
 	 */
 	public static void calcularSolucaoViaCplex(int n, Double W1, Double W2, Double W3, List<Item> itens) {
 
 		try {
 			IloCplex cplex = new IloCplex();
 
-			IloNumVar[] x = cplex.numVarArray(n, 0, Integer.MAX_VALUE, IloNumVarType.Int);
-			
+			IloNumVar[] x = cplex.numVarArray(n, 0.0, Double.MAX_VALUE, IloNumVarType.Float);
+
 			IloLinearNumExpr funcaoObjetivo = cplex.linearNumExpr();
 			for (int i = 0; i < n; i++) {
 				funcaoObjetivo.addTerm(itens.get(i).getValor(), x[i]);
@@ -71,7 +72,8 @@ public class MitInteiro {
 			cplex.setOut(null);
 
 			if (cplex.solve()) {
-				System.out.printf("\nValor da Função Objetivo: %s\nValor das variáveis não nulas: ", cplex.getObjValue());
+				System.out.printf("\nValor da Função Objetivo: %s\nValor das variáveis não nulas: ",
+						cplex.getObjValue());
 
 				for (int i = 0; i < n; i++) {
 					double s = Math.floor(cplex.getValue(x[i]) * 100) / 100;

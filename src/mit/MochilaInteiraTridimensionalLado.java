@@ -5,37 +5,35 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class MochilaInteiraTridimensional {
+public class MochilaInteiraTridimensionalLado {
 
 	public static final double SOLUCAO_INVIAVEL = -1D;
 
-	public void resolver(int n, Double W1, Double W2, Double W3, List<Item> itens) {
+	public Resultado resolver(int n, Double W1, Double W2, Double W3, List<Item> itens, String ladoRamificacao) {
+
+		Resultado resultadoFinal = new Resultado();
 
 		ProblemaMIT relaxacaoDoProblema = new ProblemaMIT();
 		relaxacaoDoProblema.calcularSolucaoViaCplex(n, W1, W2, W3, itens, relaxacaoDoProblema.getId());
 
 		ProblemaMIT heuristicaDoProblema = new ProblemaMIT();
-		heuristicaDoProblema.calcularSolucaoInicialComHeuristicaGulosa(n, W1, W2, W3, itens, relaxacaoDoProblema);
+		// heuristicaDoProblema.calcularSolucaoInicialComHeuristicaGulosa(n, W1, W2, W3,
+		// itens, relaxacaoDoProblema);
+		heuristicaDoProblema.calcularSolucaoInicialComHeuristicaDeArredondamento(relaxacaoDoProblema);
 
 		if (relaxacaoDoProblema.getResultado().getValorFuncaoObjetivo() == SOLUCAO_INVIAVEL) {
 			System.out.println("A relaxação do modelo não possui solução viável.");
 			System.exit(0);
 		} else {
-
-			Resultado resultadoFinal = new Resultado();
 			List<Resultado> resultadosEncontrados = new ArrayList<>();
 
 			resultadosEncontrados.add(relaxacaoDoProblema.getResultado());
+			resultadosEncontrados.add(heuristicaDoProblema.getResultado());
+			resultadoFinal.setValorFuncaoObjetivo(heuristicaDoProblema.getResultado().getValorFuncaoObjetivo());
+			resultadoFinal.setVariaveisInteiras(heuristicaDoProblema.getResultado().getVariaveisInteiras());
 
 			List<ProblemaMIT> listaDeProblemas = new ArrayList<>();
 			listaDeProblemas.add(relaxacaoDoProblema);
-
-			if (heuristicaDoProblema.getResultado().getValorFuncaoObjetivo() < relaxacaoDoProblema.getResultado()
-					.getValorFuncaoObjetivo()) {
-				resultadosEncontrados.add(heuristicaDoProblema.getResultado());
-				resultadoFinal.setValorFuncaoObjetivo(heuristicaDoProblema.getResultado().getValorFuncaoObjetivo());
-				resultadoFinal.setVariaveisInteiras(heuristicaDoProblema.getResultado().getVariaveisInteiras());
-			}
 
 			while (listaDeProblemas.size() != 0) {
 				ProblemaMIT subproblema = recuperarProblema(listaDeProblemas);
@@ -51,13 +49,14 @@ public class MochilaInteiraTridimensional {
 						imprimirResultadoParcial(subproblema);
 					}
 				} else {
-					executarBranchAndBound(subproblema, n, W1, W2, W3, itens, listaDeProblemas, resultadosEncontrados);
+					executarBranchAndBound(subproblema, n, W1, W2, W3, itens, listaDeProblemas, resultadosEncontrados,
+							ladoRamificacao);
 				}
 			}
-			resultadoFinal.imprimir();
 		}
+		return resultadoFinal;
 	}
-	
+
 	private ProblemaMIT recuperarProblema(List<ProblemaMIT> listaDeProblemas) {
 
 		Collections.sort(listaDeProblemas, ProblemaMIT.porValorFuncaoObjetivo());
@@ -77,7 +76,8 @@ public class MochilaInteiraTridimensional {
 	}
 
 	public void executarBranchAndBound(ProblemaMIT subproblema, int n, Double W1, Double W2, Double W3,
-			List<Item> itens, List<ProblemaMIT> listaDeProblemas, List<Resultado> resultadosEncontrados) {
+			List<Item> itens, List<ProblemaMIT> listaDeProblemas, List<Resultado> resultadosEncontrados,
+			String ladoRamificacao) {
 
 		// for (Item variavelEscolhida :
 		// subproblema.getResultado().getVariaveisFracionadas()) {
@@ -100,13 +100,13 @@ public class MochilaInteiraTridimensional {
 					W1, W2, W3, itens);
 
 			if (verificarPermissaoEmpilhar(subProblemaComRestricaoMenorIgual, subProblemaComRestricaoMaiorIgual,
-					resultadosEncontrados)) {
+					resultadosEncontrados, ladoRamificacao)) {
 				listaDeProblemas.add(subProblemaComRestricaoMenorIgual);
 				resultadosEncontrados.add(subProblemaComRestricaoMenorIgual.getResultado());
 			}
 
 			if (verificarPermissaoEmpilhar(subProblemaComRestricaoMaiorIgual, subProblemaComRestricaoMenorIgual,
-					resultadosEncontrados)) {
+					resultadosEncontrados, ladoRamificacao)) {
 				listaDeProblemas.add(subProblemaComRestricaoMaiorIgual);
 				resultadosEncontrados.add(subProblemaComRestricaoMaiorIgual.getResultado());
 			}
@@ -119,11 +119,12 @@ public class MochilaInteiraTridimensional {
 		Restricao novaRestricao = new Restricao(variavelEscolhida.getLabel(), simboloRestricao,
 				variavelEscolhida.getX());
 
-		List<Restricao> restricoesAdicionais = ajustarRestricoesOpostas(subproblema.getRestricoes(), novaRestricao);
+		List<Restricao> restricoesAdicionais = ajustarRestricoes(subproblema.getRestricoes(), novaRestricao);
 
 		ProblemaMIT subProblemaComRestricaoAdicionais = null;
 
-		if (!encontrarIncompatibilidadeNasRestricoes(restricoesAdicionais)) {
+		// if (!encontrarIncompatibilidadeNasRestricoes(restricoesAdicionais)) {
+		if (restricoesAdicionais.size() != 0) {
 			subProblemaComRestricaoAdicionais = new ProblemaMIT(subproblema, restricoesAdicionais);
 			subProblemaComRestricaoAdicionais.calcularSolucaoViaCplex(n, W1, W2, W3, itens,
 					subProblemaComRestricaoAdicionais.getId());
@@ -132,31 +133,44 @@ public class MochilaInteiraTridimensional {
 		return subProblemaComRestricaoAdicionais;
 	}
 
-	private List<Restricao> ajustarRestricoesOpostas(List<Restricao> restricoesExistentes, Restricao novaRestricao) {
-		List<Restricao> restricoesAdicionais = new ArrayList<>();
+	private List<Restricao> ajustarRestricoes(List<Restricao> restricoesExistentes, Restricao novaRestricao) {
 
-		restricoesAdicionais.addAll(restricoesExistentes);
-		restricoesAdicionais.add(novaRestricao);
+		List<Restricao> todasRestricoes = new ArrayList<>();
+		todasRestricoes.addAll(restricoesExistentes);
+		todasRestricoes.add(novaRestricao);
+		
+		// caso em que a mesma variável é, por exemplo, x_1 >= 5 e x_1 <= 3 então
+		// retorna uma lista vazia para indicar que encontrou incompatibilidade nas
+		// restricoes e não precisa resolver esse novo problema
+		if (encontrarIncompatibilidadeNasRestricoes(todasRestricoes)) {
+			return new ArrayList<>(); 
+		}
 
 		for (Restricao r : restricoesExistentes) {
+			// caso em que já foi resolvido um problema com restrição mais
+			// restritiva para esta variável a ramificar retorna uma lista vazia para
+			// indicar que não precisa resolver esse novo problema
+			if (r.ehMaisRestritiva(novaRestricao)) {
+				return new ArrayList<>(); 
+			}
+			// caso em que a mesma variável é >= e <= ao memos valor.
+			// Ex.: x_1 >= 1 e x_1 <= 1 então troca por x_1 = 1
 			if (r.ehRestricaoOposta(novaRestricao)) {
-				// troca duas restrições opostas por uma
-				restricoesAdicionais.remove(r);
-				restricoesAdicionais.remove(novaRestricao);
-				restricoesAdicionais.add(new Restricao(novaRestricao.getLabel(), "==", novaRestricao.getXinteiro()));
+				todasRestricoes.remove(r);
+				todasRestricoes.remove(novaRestricao);
+				todasRestricoes.add(new Restricao(novaRestricao.getLabel(), "==", novaRestricao.getXinteiro()));
 			}
 		}
-		return restricoesAdicionais;
+		return todasRestricoes; 
 	}
 
-// TODO  verificar se estou misturando as variaves de um lado para o outro do ramo
-	private boolean encontrarIncompatibilidadeNasRestricoes(List<Restricao> restricoesAdicionais) {
+	private boolean encontrarIncompatibilidadeNasRestricoes(List<Restricao> restricoes) {
 
-		List<Restricao> restricoesMaiorIgual = restricoesAdicionais.stream()
+		List<Restricao> restricoesMaiorIgual = restricoes.stream()
 				.filter(r -> r.getSimboloRestricao().equals(">=")).collect(Collectors.toList());
 		Collections.sort(restricoesMaiorIgual, Restricao.porLabel());
 
-		List<Restricao> restricoesMenorIgual = restricoesAdicionais.stream()
+		List<Restricao> restricoesMenorIgual = restricoes.stream()
 				.filter(r -> r.getSimboloRestricao().equals("<=")).collect(Collectors.toList());
 		Collections.sort(restricoesMenorIgual, Restricao.porLabel());
 
@@ -164,7 +178,7 @@ public class MochilaInteiraTridimensional {
 				: restricoesMenorIgual.size();
 
 		for (int i = 0; i < menorTamanho; i++) {
-			if (restricoesMenorIgual.get(0).getXinteiro() < restricoesMaiorIgual.get(0).getXinteiro()) {
+			if (restricoesMenorIgual.get(0).getXinteiro() > restricoesMaiorIgual.get(0).getXinteiro()) {
 				return true;
 			}
 		}
@@ -172,7 +186,7 @@ public class MochilaInteiraTridimensional {
 	}
 
 	private boolean verificarPermissaoEmpilhar(ProblemaMIT subProbelma1, ProblemaMIT subProbelma2,
-			List<Resultado> resultadosEncontrados) {
+			List<Resultado> resultadosEncontrados, String ladoRamificacao) {
 
 		// subproblema não resolvido por incompatibilidade encontrada nas restrições.
 		// Ex.: x_0 >= 2 e x_0 <= 0.
@@ -190,28 +204,23 @@ public class MochilaInteiraTridimensional {
 				return false;
 			}
 		}
-		/*
-		 * if (subProbelma2 != null) { if
-		 * (subProbelma1.getResultado().getValorFuncaoObjetivo() <
-		 * subProbelma2.getResultado() .getValorFuncaoObjetivo()) { return false; } }
-		 */
 
-		if (subProbelma2 != null) {
-			if (subProbelma1.getResultado().getValorFuncaoObjetivo() > subProbelma2.getResultado()
-					.getValorFuncaoObjetivo()) {
-				return false;
+		if (ladoRamificacao.equals("lado esquerdo")) {
+			if (subProbelma2 != null) {
+				if (subProbelma1.getResultado().getValorFuncaoObjetivo() < subProbelma2.getResultado()
+						.getValorFuncaoObjetivo()) {
+					return false;
+				}
+			}
+		} else {
+			if (subProbelma2 != null) {
+				if (subProbelma1.getResultado().getValorFuncaoObjetivo() > subProbelma2.getResultado()
+						.getValorFuncaoObjetivo()) {
+					return false;
+				}
 			}
 		}
 		return true;
-	}
-
-	private void esperarSegundos(int i) {
-		try {
-			Thread.currentThread();
-			Thread.sleep(i * 1000);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
 	}
 
 	private Item retornarVariavelARamificar(List<Item> variaveisFracionadas) {
@@ -222,5 +231,14 @@ public class MochilaInteiraTridimensional {
 		 * "\nItem Por Valor Da Variavel: [", "]")));
 		 */
 		return variaveisFracionadas.get(0);
+	}
+	
+	private void esperarSegundos(int i) {
+		try {
+			Thread.currentThread();
+			Thread.sleep(i * 1000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 	}
 }
