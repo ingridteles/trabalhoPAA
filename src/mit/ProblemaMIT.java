@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import ilog.concert.IloException;
 import ilog.concert.IloLinearNumExpr;
@@ -32,6 +31,7 @@ public class ProblemaMIT {
 		this.restricoes.addAll(restricoesAdicionais);
 	}
 
+	// TODO verificar se vale a pena usar esse heurística
 	public void calcularSolucaoInicialComHeuristicaGulosa(int n, Double W1, Double W2, Double W3, List<Item> itens,
 			ProblemaMIT relaxacaoDoProblema) {
 		System.out.println("\n\nInicio calcularSolucaoInicialComHeuristicaGulosa");
@@ -55,7 +55,7 @@ public class ProblemaMIT {
 
 		int indice = 0;
 		for (int i = 0; i < itensOrdenados.size(); i++) {
-			if (itensOrdenados.get(i).getLabel() == maiorVariavelProblemaRelaxado.getLabel()) {
+			if (itensOrdenados.get(i).getIndice() == maiorVariavelProblemaRelaxado.getIndice()) {
 				indice = i;
 			}
 		}
@@ -98,32 +98,12 @@ public class ProblemaMIT {
 		this.resultado.setVariaveisFracionadas(variaveisFracionadas);
 /*
 		System.out.println("Funcao objetivo: " + valorFuncaoObjetivo);
-		System.out.println(variaveisInteiras.stream().map(i -> "x_" + i.getLabel() + " = " + i.getX())
+		System.out.println(variaveisInteiras.stream().map(i -> "x_" + i.getIndice() + " = " + i.getX())
 				.collect(Collectors.joining(", ", "variaveis inteiras: [", "]")));
-		System.out.println(variaveisFracionadas.stream().map(i -> "x_" + i.getLabel() + " = " + i.getX())
+		System.out.println(variaveisFracionadas.stream().map(i -> "x_" + i.getIndice() + " = " + i.getX())
 				.collect(Collectors.joining(", ", "variavel fracionada: [", "]")));
 		System.out.println("Fim calcularSolucaoInicialComHeuristicaGulosa\n\n");
 		*/
-	}
-	
-	
-	public void calcularSolucaoInicialComHeuristicaDeArredondamento(ProblemaMIT relaxacaoDoProblema) {
-		System.out.println("\n\nInicio Calcular Solucao Inicial Com Heuristica de Arredondamento");
-
-		Double valorFuncaoObjetivo = relaxacaoDoProblema.getResultado().getValorFuncaoObjetivo();
-		List<Item> variaveisInteiras = new ArrayList<>();
-		variaveisInteiras.addAll(relaxacaoDoProblema.getResultado().getVariaveisInteiras());
-		
-		for(Item item: relaxacaoDoProblema.getResultado().getVariaveisFracionadas()) {
-			valorFuncaoObjetivo = valorFuncaoObjetivo - (item.getX()*item.getValor());  
-			item.setX((int) item.getX());
-			variaveisInteiras.add(item);
-			valorFuncaoObjetivo = valorFuncaoObjetivo + (item.getX()*item.getValor());
-		}
-	
-		this.resultado.setValorFuncaoObjetivo(valorFuncaoObjetivo);
-		this.resultado.setVariaveisInteiras(variaveisInteiras);
-		this.resultado.setVariaveisFracionadas(new ArrayList<>());
 	}
 
 	private Item retornarMaiorVariavelProblemaRelaxado(ProblemaMIT relaxacaoDoProblema) {
@@ -142,6 +122,32 @@ public class ProblemaMIT {
 			return relaxacaoDoProblema.getResultado().getVariaveisInteiras().get(0);
 		}
 	}
+	
+	
+	public void calcularSolucaoInicialComHeuristicaDeArredondamento(ProblemaMIT relaxacaoDoProblema) {
+		//System.out.println("\n\nInicio Calcular Solucao Inicial Com Heuristica de Arredondamento");
+
+		List<Item> variaveisInteiras = new ArrayList<>();
+		variaveisInteiras.addAll(relaxacaoDoProblema.getResultado().getVariaveisInteiras());
+		
+		for(Item item: relaxacaoDoProblema.getResultado().getVariaveisFracionadas()) {
+			item.setX((int) item.getX());
+			variaveisInteiras.add(item);
+		}
+	
+		this.resultado.setValorFuncaoObjetivo(calcularFuncaoObjetivo(variaveisInteiras));
+		this.resultado.setVariaveisInteiras(variaveisInteiras);
+		this.resultado.setVariaveisFracionadas(new ArrayList<>());
+	}
+
+	private Double calcularFuncaoObjetivo(List<Item> variaveisInteiras) {
+		double valorFuncaoObjetivo = 0.0;
+		for (Item item: variaveisInteiras) {
+			valorFuncaoObjetivo = valorFuncaoObjetivo + (item.getX()*item.getValor());
+		}
+		return valorFuncaoObjetivo;
+	}
+
 
 	public void calcularSolucaoViaCplex(int n, Double W1, Double W2, Double W3, List<Item> itens, int id) {
 
@@ -153,7 +159,7 @@ public class ProblemaMIT {
 
 			IloLinearNumExpr funcaoObjetivo = cplex.linearNumExpr();
 			for (int i = 0; i < n; i++) {
-				funcaoObjetivo.addTerm(itens.get(i).getValor(), x[itens.get(i).getLabel()]);
+				funcaoObjetivo.addTerm(itens.get(i).getValor(), x[itens.get(i).getIndice()]);
 			}
 
 			cplex.addMaximize(funcaoObjetivo);
@@ -164,11 +170,11 @@ public class ProblemaMIT {
 
 			List<IloRange> constraints = new ArrayList<IloRange>();
 			for (int i = 0; i < n; i++) {
-				dimensao1.addTerm(itens.get(i).getD1(), x[itens.get(i).getLabel()]);
-				dimensao2.addTerm(itens.get(i).getD2(), x[itens.get(i).getLabel()]);
-				dimensao3.addTerm(itens.get(i).getD3(), x[itens.get(i).getLabel()]);
+				dimensao1.addTerm(itens.get(i).getD1(), x[itens.get(i).getIndice()]);
+				dimensao2.addTerm(itens.get(i).getD2(), x[itens.get(i).getIndice()]);
+				dimensao3.addTerm(itens.get(i).getD3(), x[itens.get(i).getIndice()]);
 
-				constraints.add(cplex.addGe(x[itens.get(i).getLabel()], 0));
+				constraints.add(cplex.addGe(x[itens.get(i).getIndice()], 0));
 			}
 			constraints.add(cplex.addLe(dimensao1, W1));
 			constraints.add(cplex.addLe(dimensao2, W2));
@@ -177,17 +183,17 @@ public class ProblemaMIT {
 			IloRange restricao = null;
 			for (Restricao r : this.restricoes) {
 				if (r.getSimboloRestricao().equals(">=")) {
-					restricao = cplex.addGe(x[r.getLabel()], r.getXinteiro());
-					imprimir(r, ">=");
-					nomeModelo = id + "_Modelo_" + r.getLabel() + "_maiorIgual_" + r.getXinteiro() + ".lp";
+					restricao = cplex.addGe(x[r.getIndice()], r.getXinteiro());
+					//imprimir(r, ">=");
+					nomeModelo = id + "_Modelo_" + r.getIndice() + "_maiorIgual_" + r.getXinteiro() + ".lp";
 				} else if (r.getSimboloRestricao().equals("<=")) {
-					restricao = cplex.addLe(x[r.getLabel()], r.getXinteiro());
-					imprimir(r, "<=");
-					nomeModelo = id + "_Modelo_" + r.getLabel() + "_menorIgual_" + r.getXinteiro() + ".lp";
+					restricao = cplex.addLe(x[r.getIndice()], r.getXinteiro());
+					//imprimir(r, "<=");
+					nomeModelo = id + "_Modelo_" + r.getIndice() + "_menorIgual_" + r.getXinteiro() + ".lp";
 				} else if (r.getSimboloRestricao().equals("==")) {
-					restricao = cplex.addEq(x[r.getLabel()], r.getXinteiro());
-					imprimir(r, "==");
-					nomeModelo = id + "_Modelo_" + r.getLabel() + "_igual_" + r.getXinteiro() + ".lp";
+					restricao = cplex.addEq(x[r.getIndice()], r.getXinteiro());
+					//imprimir(r, "==");
+					nomeModelo = id + "_Modelo_" + r.getIndice() + "_igual_" + r.getXinteiro() + ".lp";
 				}
 				constraints.add(restricao);
 			}
@@ -234,7 +240,7 @@ public class ProblemaMIT {
 	private void imprimir(Restricao novaRestricao, String simboloRestricao) {
 		String CSI = "\u001B[";
 		System.out.print(CSI + "32" + "m");
-		System.out.printf("\n Restrição adicionada: x_%s %s %s\n", novaRestricao.getLabel(), simboloRestricao,
+		System.out.printf("\n Restrição adicionada: x_%s %s %s\n", novaRestricao.getIndice(), simboloRestricao,
 				novaRestricao.getXinteiro());
 		System.out.println(CSI + "m");
 	}

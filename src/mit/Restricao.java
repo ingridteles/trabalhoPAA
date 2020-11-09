@@ -3,16 +3,16 @@ package mit;
 import java.util.Comparator;
 
 public class Restricao {
-	private int label;
+	private int indice;
 	private String simboloRestricao;
 	private int xInteiro;
 
-	public int getLabel() {
-		return label;
+	public int getIndice() {
+		return indice;
 	}
 
-	public void setLabel(int label) {
-		this.label = label;
+	public void setIndice(int indice) {
+		this.indice = indice;
 	}
 
 	public String getSimboloRestricao() {
@@ -31,8 +31,8 @@ public class Restricao {
 		this.xInteiro = xInteiro;
 	}
 
-	public Restricao(int label, String simboloRestricao, double xFracionado) {
-		this.label = label;
+	public Restricao(int indice, String simboloRestricao, double xFracionado) {
+		this.indice = indice;
 		this.simboloRestricao = simboloRestricao;
 		if (simboloRestricao.equals(">=")) {
 			this.xInteiro = (int) xFracionado + 1;
@@ -44,11 +44,11 @@ public class Restricao {
 	}
 
 	public boolean ehRestricaoOposta(Restricao novaRestricao) {
-		if (this.label == novaRestricao.label && this.simboloRestricao.equals(">=")
+		if (this.indice == novaRestricao.indice && this.simboloRestricao.equals(">=")
 				&& novaRestricao.simboloRestricao.equals("<=") && this.xInteiro == novaRestricao.xInteiro) {
 			return true;
 		}
-		if (this.label == novaRestricao.label && this.simboloRestricao.equals("<=")
+		if (this.indice == novaRestricao.indice && this.simboloRestricao.equals("<=")
 				&& novaRestricao.simboloRestricao.equals(">=") && this.xInteiro == novaRestricao.xInteiro) {
 			return true;
 		}
@@ -58,7 +58,7 @@ public class Restricao {
 	public boolean ehMaisRestritiva(Restricao novaRestricao) {
 		// caso em que a restrição já existente tem o mesmo label, o mesmo símbolo e é e
 		// pe
-		if (this.label == novaRestricao.label && this.simboloRestricao.equals(novaRestricao.simboloRestricao)) {
+		if (this.indice == novaRestricao.indice && this.simboloRestricao.equals(novaRestricao.simboloRestricao)) {
 			if (this.simboloRestricao.equals("<=")) {
 				if (this.xInteiro <= novaRestricao.xInteiro) {
 					return true;
@@ -73,10 +73,10 @@ public class Restricao {
 		return false;
 	}
 
-	public static Comparator<Restricao> porLabel() {
+	public static Comparator<Restricao> porIndice() {
 		return new Comparator<Restricao>() {
 			public int compare(Restricao r1, Restricao r2) {
-				return r1.label - r2.label;
+				return r1.indice - r2.indice;
 			}
 		};
 	}

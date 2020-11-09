@@ -18,17 +18,18 @@ public class MitFracionado {
 		String path = "instancias_knapsack_3d/";
 		//String intancia = "teste2.3kp";
 		// String intancia = "teste-2.3kp";
-		String intancia = "facil0";
+		//String intancia = "facil0";
 		// String intancia = "facil1";
-		// String intancia = "facil2";
+		//String intancia = "facil2";
 		// String intancia = "facil3";
-		// String intancia = "facil4";
-		// String intancia = "media1";
-		// String intancia = "media2";
+		 //String intancia = "facil4";
+		
+		//String intancia = "media1";
+         //  String intancia = "media2";
 		// String intancia = "media3";
-		// String intancia = "dificil1";
-		// String intancia = "dificil2";
-		// String intancia = "dificil3";
+		//String intancia = "dificil1";
+		 //String intancia = "dificil2";
+		 String intancia = "dificil3";
 		System.out.println("\n\n\n******************** " + intancia + " **************************************");
 
 		Entrada.lerEntrada(path + intancia);
@@ -85,7 +86,7 @@ public class MitFracionado {
 				System.out.println("\n Solução inviável.");
 			}
 			System.out.println("\n");
-			cplex.exportModel("ModeloInteiro.lp");
+			cplex.exportModel("ModeloFracionado.lp");
 			cplex.end();
 			cplex.close();
 		} catch (IloException exc) {

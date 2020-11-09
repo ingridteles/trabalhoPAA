@@ -4,6 +4,7 @@ import java.util.Comparator;
 
 public class Item {
 
+	private int indice;
 	private int label;
 	private double valor;
 	private double d1;
@@ -12,7 +13,8 @@ public class Item {
 	private double x;
 
 	public Item(Item item, double solucao) {
-		this.label = item.label;
+		this.indice = item.indice;
+		this.label = item.indice + 1;
 		this.valor = item.valor;
 		this.d1  = item.d1;
 		this.d2 = item.d2;
@@ -21,7 +23,8 @@ public class Item {
 	}
 
 	public Item(int i, double valor, double d1, double d2, double d3) {
-		this.label = i;
+		this.indice = i;
+		this.label = this.indice + 1;
 		this.valor = valor;
 		this.d1  = d1;
 		this.d2 = d2;
@@ -29,10 +32,10 @@ public class Item {
 		this.x = 0.0;
 	}
 
-	public static Comparator<Item> porLabel() {
+	public static Comparator<Item> porIndice() {
 		return new Comparator<Item>() {
 			public int compare(Item i1, Item i2) {
-				return i1.label - i2.label;
+				return i1.indice - i2.indice;
 			}
 		};
 	}
@@ -65,6 +68,9 @@ public class Item {
 	
 	
 	public boolean equals(Item item) {
+		if(this.indice != item.indice) {
+			return false;
+		}
 		if(this.label != item.label) {
 			return false;
 		}
@@ -86,6 +92,14 @@ public class Item {
 		return true;
 	}
 	
+	public int getIndice() {
+		return indice;
+	}
+
+	public void setIndice(int indice) {
+		this.indice = indice;
+	}
+
 	public int getLabel() {
 		return label;
 	}
